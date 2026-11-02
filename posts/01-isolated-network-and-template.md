@@ -1,6 +1,6 @@
 # GOAD-Light on a 16 GB Proxmox Host — Part 1: Isolated Network & Windows Template
 
-Nov 2, 2026 · @Nick
+Nov 2, 2026 · @NickP3lle
 
 ## About the project
 
@@ -42,7 +42,7 @@ Apply with `ifreload -``a`. This touches only `vmbr1`, so there is no risk of lo
 
 Neither VLAN has a router. The only way out of VLAN 66 is a temporary NAT window on the control node, covered later in this post.
 
-&#91;embedded content: lab topology · home LAN, two dual-homed hosts, isolated vmbr1\]
+![Lab topology: only ParrotOS and goad-control touch both the home LAN and the isolated vmbr1 bridge](img/lab-topology.svg)
 
 Only ParrotOS and goad-control touch both networks. CT 205 forwards lab traffic to the internet only while its NAT script is on.
 
