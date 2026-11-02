@@ -1,0 +1,9 @@
+# /root/.goad/goad.ini
+proxmox_url             = "https://<proxmox_ip>:8006/api2/json"
+proxmox_username    = "terraform@pve!provider"
+proxmox_token = "<secret_token>"
+proxmox_skip_tls_verify = "true"
+proxmox_node            = "pve"
+proxmox_pool            = "GOAD"
+proxmox_iso_storage     = "local"
+proxmox_vm_storage      = "local-lvm"

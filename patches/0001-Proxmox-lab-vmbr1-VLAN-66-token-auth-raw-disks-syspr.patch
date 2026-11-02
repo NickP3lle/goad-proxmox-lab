@@ -1,0 +1,175 @@
+From 2d673d3d0e5754d3a36086aab6d95f76b30d37ef Mon Sep 17 00:00:00 2001
+From: NickP3lle <NickP3lle@users.noreply.github.com>
+Date: Mon, 2 Nov 2026 15:51:09 +0000
+Subject: [PATCH] Proxmox lab: vmbr1/VLAN 66, token auth, raw disks, sysprep
+ /quit, RAM + gateway for 16GB host
+
+---
+ ad/GOAD-Light/providers/proxmox/windows.tf    | 21 +++++++++++--------
+ packer/proxmox/packer.json.pkr.hcl            |  7 ++++---
+ .../scripts/sysprep/cloudbase-init-p2.ps1     |  2 +-
+ packer/proxmox/variables.pkr.hcl              | 12 ++++++++++-
+ ...ws_server2019_proxmox_cloudinit.pkvars.hcl |  8 +++----
+ template/provider/proxmox/windows.tf          |  2 ++
+ 6 files changed, 34 insertions(+), 18 deletions(-)
+
+diff --git a/ad/GOAD-Light/providers/proxmox/windows.tf b/ad/GOAD-Light/providers/proxmox/windows.tf
+index 264e4ad..545c0ad 100644
+--- a/ad/GOAD-Light/providers/proxmox/windows.tf
++++ b/ad/GOAD-Light/providers/proxmox/windows.tf
+@@ -1,30 +1,33 @@
+ "dc01" = {
+   name               = "DC01"
++  vm_id              = 9001
+   desc               = "DC01 - windows server 2019 - {{ip_range}}.10"
+   cores              = 2
+-  memory             = 3096
++  memory             = 2560
+   clone              = "WinServer2019_x64"
+-  dns                = "{{ip_range}}.1"
++  dns                = "1.1.1.1"
+   ip                 = "{{ip_range}}.10/24"
+-  gateway            = "{{ip_range}}.1"
++  gateway            = "{{ip_range}}.20"
+ }
+ "dc02" = {
+   name               = "DC02"
++  vm_id              = 9002
+   desc               = "DC02 - windows server 2019 - {{ip_range}}.11"
+   cores              = 2
+-  memory             = 3096
++  memory             = 2560
+   clone              = "WinServer2019_x64"
+-  dns                = "{{ip_range}}.1"
++  dns                = "1.1.1.1"
+   ip                 = "{{ip_range}}.11/24"
+-  gateway            = "{{ip_range}}.1"
++  gateway            = "{{ip_range}}.20"
+ }
+ "srv02" = {
+   name               = "SRV02"
++  vm_id              = 9003
+   desc               = "SRV02 - windows server 2019 - {{ip_range}}.22"
+   cores              = 2
+-  memory             = 6240
++  memory             = 2048
+   clone              = "WinServer2019_x64"
+-  dns                = "{{ip_range}}.1"
++  dns                = "1.1.1.1"
+   ip                 = "{{ip_range}}.22/24"
+-  gateway            = "{{ip_range}}.1"
++  gateway            = "{{ip_range}}.20"
+ }
+\ No newline at end of file
+diff --git a/packer/proxmox/packer.json.pkr.hcl b/packer/proxmox/packer.json.pkr.hcl
+index a9609de..e3d832d 100644
+--- a/packer/proxmox/packer.json.pkr.hcl
++++ b/packer/proxmox/packer.json.pkr.hcl
+@@ -40,13 +40,13 @@ source "proxmox-iso" "windows" {
+   iso_file                 = "${var.iso_file}"
+   memory                   = "${var.vm_memory}"
+   network_adapters {
+-    bridge = "vmbr3"
++    bridge = "vmbr1"
+     model  = "virtio"
+-    vlan_tag = "10"
++    vlan_tag = "66"
+   }
+   node                 = "${var.proxmox_node}"
+   os                   = "${var.os}"
+-  password             = "${var.proxmox_password}"
++  token                = "${var.proxmox_token}"
+   pool                 = "${var.proxmox_pool}"
+   proxmox_url          = "${var.proxmox_url}"
+   sockets              = "${var.vm_sockets}"
+@@ -54,6 +54,7 @@ source "proxmox-iso" "windows" {
+   template_name        = "${var.vm_name}"
+   username             = "${var.proxmox_username}"
+   vm_name              = "${var.vm_name}"
++  vm_id                = "${var.vm_id}"
+   winrm_insecure       = true
+   winrm_no_proxy       = true
+   winrm_password       = "${var.winrm_password}"
+diff --git a/packer/proxmox/scripts/sysprep/cloudbase-init-p2.ps1 b/packer/proxmox/scripts/sysprep/cloudbase-init-p2.ps1
+index afb44a9..a5f1298 100644
+--- a/packer/proxmox/scripts/sysprep/cloudbase-init-p2.ps1
++++ b/packer/proxmox/scripts/sysprep/cloudbase-init-p2.ps1
+@@ -18,4 +18,4 @@ Set-Service -Name cloudbase-init -StartupType Disabled
+ 
+ # Run sysprep
+ cd "C:\Program Files\Cloudbase Solutions\Cloudbase-Init\conf\"
+-start-process -FilePath "C:/Windows/system32/sysprep/sysprep.exe" -ArgumentList "/generalize /oobe /mode:vm /unattend:cloudbase-init-unattend.xml" -wait
++start-process -FilePath "C:/Windows/system32/sysprep/sysprep.exe" -ArgumentList "/generalize /oobe /mode:vm /quit /unattend:cloudbase-init-unattend.xml" -wait
+diff --git a/packer/proxmox/variables.pkr.hcl b/packer/proxmox/variables.pkr.hcl
+index e9bab86..b903390 100644
+--- a/packer/proxmox/variables.pkr.hcl
++++ b/packer/proxmox/variables.pkr.hcl
+@@ -1,6 +1,6 @@
+ variable "proxmox_url" {}
+ variable "proxmox_username" {}
+-variable "proxmox_password" {}
++variable "proxmox_password" { default = null }
+ variable "proxmox_skip_tls_verify" {}
+ variable "proxmox_node" {}
+ variable "proxmox_pool" {}
+@@ -19,3 +19,13 @@ variable "vm_disk_size" {}
+ variable "vm_disk_format" {}
+ variable "vm_sockets" {}
+ variable "os" {}
++
++variable "vm_id" {
++  type    = string
++  default = "9000"
++}
++
++variable "proxmox_token" {
++  type      = string
++  sensitive = true
++}
+diff --git a/packer/proxmox/windows_server2019_proxmox_cloudinit.pkvars.hcl b/packer/proxmox/windows_server2019_proxmox_cloudinit.pkvars.hcl
+index 17d0e21..a692ff1 100644
+--- a/packer/proxmox/windows_server2019_proxmox_cloudinit.pkvars.hcl
++++ b/packer/proxmox/windows_server2019_proxmox_cloudinit.pkvars.hcl
+@@ -1,13 +1,13 @@
+ winrm_username        = "vagrant"
+ winrm_password        = "vagrant"
+-vm_name               = "WinServer2019x64-cloudinit-qcow2"
++vm_name               = "WinServer2019x64-cloudinit"
+ template_description  = "Windows Server 2019 64-bit - build 17763.737.190906-2324 - template built with Packer - cloudinit - {{isotime \"2006-01-02 03:04:05\"}}"
+-iso_file              = "local:iso/windows_server2019_x64FREE_en-us.iso"
++iso_file = "local:iso/windows_server2019_x64FREE_en-us.iso"
+ autounattend_iso      = "./iso/Autounattend_winserver2019_cloudinit.iso"
+-autounattend_checksum = "sha256:2b3eeb1346c38a3ef5e4daefcf58d212471db7c8a95dd3dff831b78aaa246e8e"
++autounattend_checksum = "sha256:8f930eb1c08def6243d7bcfb72a6f931cf842e4c6055c5ced01f42cd1580bdf8"
+ vm_cpu_cores          = "2"
+ vm_memory             = "4096"
+ vm_disk_size          = "40G"
+ vm_sockets            = "1"
+ os                    = "win10"
+-vm_disk_format        = "qcow2"
+\ No newline at end of file
++vm_disk_format        = "raw"
+\ No newline at end of file
+diff --git a/template/provider/proxmox/windows.tf b/template/provider/proxmox/windows.tf
+index 42a638b..6fc66ba 100644
+--- a/template/provider/proxmox/windows.tf
++++ b/template/provider/proxmox/windows.tf
+@@ -9,6 +9,7 @@ variable "vm_config" {
+     ip                 = string
+     gateway            = string
+     os                 = optional(string, "win10")
++    vm_id              = optional(number)
+   }))
+ 
+   default = {
+@@ -23,6 +24,7 @@ resource "proxmox_virtual_environment_vm" "bgp" {
+     description = each.value.desc
+     node_name   = var.pm_node
+     pool_id     = var.pm_pool
++    vm_id       = each.value.vm_id
+ 
+     operating_system {
+       type = each.value.os
+-- 
+2.39.5
+
