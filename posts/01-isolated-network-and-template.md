@@ -1,4 +1,11 @@
-# GOAD-Light on a 16 GB Proxmox Host — Part 1: Isolated Network & Windows Template
+---
+title: "GOAD on Proxmox, Part 1: Isolated Network & Windows Template"
+date: 2026-11-03
+tags: [AD, Proxmox, Lab, Packer]
+excerpt: "Building an isolated lab network and a working Windows Server 2019 Packer template on a single 16 GB Proxmox host, ready to deploy GOAD-Light."
+---
+
+# GOAD on Proxmox, Part 1: Isolated Network & Windows Template
 
 Nov 2, 2026 · @NickP3lle
 
