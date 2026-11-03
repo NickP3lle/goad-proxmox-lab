@@ -23,7 +23,7 @@ The project runs in five phases:
 4. Configure detection for each attack (Wazuh / Suricata)
 5. Optionally map attack → detection → mitigation to MITRE ATT&CK
 
-**N****ote****:** GOAD is deliberately vulnerable: never expose it to the internet or to a network you share with other people.
+**Note:** GOAD is deliberately vulnerable: never expose it to the internet or to a network you share with other people.
 
 ## Network design: isolated by construction
 
@@ -40,7 +40,7 @@ iface vmbr1 inet manual
     bridge-vids 66,67
 ```
 
-Apply with `ifreload -``a`. This touches only `vmbr1`, so there is no risk of losing access to the web UI on `vmbr0`.
+Apply with `ifreload -a`. This touches only `vmbr1`, so there is no risk of losing access to the web UI on `vmbr0`.
 
 | VLAN | Name | Subnet | Purpose |
 | --- | --- | --- | --- |
@@ -51,7 +51,7 @@ Neither VLAN has a router. The only way out of VLAN 66 is a temporary NAT window
 
 ![Lab topology: only ParrotOS and goad-control touch both the home LAN and the isolated vmbr1 bridge](img/lab-topology.svg)
 
-Only ParrotOS and goad-control touch both networks. CT 205 forwards lab traffic to the internet only while its NAT script is on.
+Only ParrotOS and goad-control touch both networks. goad-control forwards lab traffic to the internet only while its NAT script is on.
 
 **IP plan for VLAN 66**
 
@@ -67,7 +67,7 @@ Only ParrotOS and goad-control touch both networks. CT 205 forwards lab traffic 
 **Attacker box.** ParrotOS has a dedicated vNIC on the lab VLAN:
 
 ```bash
-qm set 101 --net1 virtio,bridge=vmbr1,tag=66
+qm set <parrot_vm_id> --net1 virtio,bridge=vmbr1,tag=66
 ```
 
 Inside Parrot, the new interface gets `172.16.66.5/24` with no gateway and no DNS, so Parrot's internet route stays on its primary NIC by editing `/etc/network/interfaces`:
@@ -141,7 +141,7 @@ pveum user token add terraform@pve provider --privsep 0
 
 The token ID is `terraform@pve!provider`. The secret is shown once; it goes into a git-ignored variables file, never into the repo.
 
-**`VM.Monitor` is ****d****epre****cat****ed**** ****in PVE 9.** Many older guides list `VM.Monitor`. It was removed in Proxmox VE 9.0 and split into `VM.GuestAgent.*` plus `Sys.Audit` / `Sys.Modify`. Copying an old privilege list fails on it.
+**`VM.Monitor` is deprecated in PVE 9.** Many older guides list `VM.Monitor`. It was removed in Proxmox VE 9.0 and split into `VM.GuestAgent.*` plus `Sys.Audit` / `Sys.Modify`. Copying an old privilege list fails on it.
 
 ## Building the Windows Server 2019 template with Packer
 
@@ -173,7 +173,7 @@ sha256sum ./iso/Autounattend_winserver2019_cloudinit.iso   # goes into autounatt
 ```
 proxmox_url             = "https://<proxmox_ip>:8006/api2/json"
 proxmox_username        = "terraform@pve!provider"
-proxmox_token           = "[secret — never committed]"
+proxmox_token           = "<secret_token>"
 proxmox_skip_tls_verify = "true"
 proxmox_node            = "pve"
 proxmox_pool            = "GOAD"

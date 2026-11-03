@@ -1,0 +1,11 @@
+name: Notify site
+on:
+  push:
+    branches: [main]
+    paths: ["posts/**"]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
